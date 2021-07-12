@@ -6,9 +6,9 @@ import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-sampleAPKDir = "E:\\Android样本\\APK"
-# sampleAPKDir = "samples"
-dbPath = "database/Android_app_database"
+# sampleAPKDir = "H:\\APK_samples\\APK\\2021.7_zhushou.360.cn_Benign\\security"
+sampleAPKDir = "samples"
+dbPath = "database/Android_app_database.db"
 cur = 1
 APK_count = 0
 analyzed_samples = set()
@@ -66,14 +66,10 @@ def main():
         analyzed_samples.add(row[0])
     del cursor
 
-    # Use thread pool
-    threadPool = ThreadPoolExecutor(max_workers=12)
-
     for root, dirs, files in os.walk(sampleAPKDir):
         for apk_name in files:
             if apk_name.split('.')[-1].lower() == "apk":
                 APK_count = APK_count + 1
-    APK_count = APK_count - len(analyzed_samples)
     print("Found " + str(APK_count) + " APK file(s)")
     
     for root, dirs, files in os.walk(sampleAPKDir):
@@ -81,14 +77,14 @@ def main():
             try:
                 # threadPool.submit(analyze, os.path.join(root, apk_name), conn)
                 analyze(os.path.join(root, apk_name), conn=conn)
-                if cur % 100 == 0: # 每满100条记录就录入数据库
-                    print("<<<<<< Submitting data to DB >>>>>>")
-                    conn.commit()
+                # if cur % 100 == 0: # 每满100条记录就录入数据库
+                #     print("<<<<<< Submitting data to DB >>>>>>")
+                #     conn.commit()
+                print("<<<<<< Submitting data to DB >>>>>>")
+                conn.commit()
                 # cur = cur + 1
             except  Exception as ex:
                 print(ex)
-    
-    threadPool.shutdown(wait=True)
     
     print("<<<<<< Submitting data to DB >>>>>>")
     conn.commit()

@@ -3,6 +3,7 @@ import os
 import re
 import DBManager
 import time
+from zipfile import *
 
 from androguard.core.bytecodes import apk, dvm # 导入androguard的模块需要将工程解释器配置成系统解释器
 from androguard.core.analysis import analysis # 才能用pip安装的库
@@ -33,6 +34,7 @@ class APKAnalysis:
     __ReceiverCount = -1
     __ServiceCount = -1
     __ProviderCount = -1
+    __build_time = ""
 
     # Androguard analysis objects
     __gotAgObjs = False
@@ -79,7 +81,7 @@ class APKAnalysis:
     WRITE_CALENDAR = False
 
     def __init__(self, path = ""):
-        if path != "":
+        if path != "" and os.path.exists(path):
             self.__packer = []
             self.__path = path
             self.calc_androguard_objs()
@@ -105,9 +107,33 @@ class APKAnalysis:
                     fileList_ = self.__a.get_files()
                     for file_ in fileList_:
                         if ".appkey" in file_:
+                            for d in self.__d:
+                                for c in d.get_classes():
+                                    if "QVMProtect;" in str(c):
+                                        self.__packer.append("Qihoo360[DEXVMP_Customized]")
+                                        return
                             self.__packer.append("Qihoo360")
                             return
-                    self.__packer.append("Qihoo360[susp_no_appkey]")
+                    for d in self.__d:
+                        for c in d.get_classes():
+                            if "QVMProtect;" in str(c):
+                                self.__packer.append("Qihoo360[DEXVMP_Customized no_appkey]")
+                                return
+                    self.__packer.append("Qihoo360[no_appkey]")
+                    return
+
+    def __check360Java2CPacker(self):
+        if self.__a is not None:
+            fileList = self.__a.get_files()
+            for file in fileList:
+                file = os.path.basename(file)
+                if "libjgdtc.so" == file or "libjgdtc_a64.so" == file or "libjgdtc_x86.so" == file or "libjgdtc_x64.so" == file:
+                    for d in self.__d:
+                        for c in d.get_classes():
+                            if "QDTCProtect;" in str(c):
+                                self.__packer.append("Qihoo360[Dex2C_Customized]")
+                                return
+                    self.__packer.append("Qihoo360[Dex2C]")
                     return
     
     def __checkIjiamiPacker(self):
@@ -270,6 +296,7 @@ class APKAnalysis:
         if self.__a is not None:
 
             self.__check360Packer()
+            self.__check360Java2CPacker()
             self.__checkIjiamiPacker()
             self.__checkBangclePacker()
             self.__checkAliPacker()
@@ -282,6 +309,7 @@ class APKAnalysis:
             self.__checkNetQin()
             self.__checkAPKProtectPacker()
             self.__checkDingxiangPacker()
+            self.__checkEdunPacker()
             if self.__packer == []: # No matching packer
                 self.__packer = ["no known protection detected"]
 
@@ -544,6 +572,12 @@ class APKAnalysis:
             self.__appName = self.__a.get_app_name()
         return self.__appName
 
+    def getBuildTime(self):
+        if self.__path != "" and self.__build_time == "":
+            zip_info = ZipInfo.from_file(self.__path)
+            self.__build_time = str(zip_info.date_time[0]) + "-" + str(zip_info.date_time[1]) + "-" + str(zip_info.date_time[2])
+        return self.__build_time
+
 
 def basic_info_to_DB(conn, ana): # 参数：sqlite3.connect, APKAnalyze
     ana.calcPermissions() # 获取应用权限信息
@@ -556,9 +590,10 @@ def basic_info_to_DB(conn, ana): # 参数：sqlite3.connect, APKAnalyze
           "CAMERA, READ_CONTACTS, READ_LOGS, ACCESS_FINE_LOCATION, READ_FRAME_BUFFER, BRICK, INSTALL_PACKAGES, MOUNT_FORMAT_FILESYSTEMS," \
           "RECEIVE_BOOT_COMPLETED, WRITE_EXTERNAL_STORAGE, CALL_PHONE, READ_CALL_LOG, WRITE_CALL_LOG, ADD_VOICEMAIL, USE_SIP," \
           "PROCESS_OUTGOING_CALLS, SEND_SMS, RECEIVE_SMS, READ_SMS, RECEIVE_WAP_PUSH, RECEIVE_MMS, ACCESS_COARSE_LOCATION, RECORD_AUDIO," \
-          "WRITE_CONTACTS, GET_ACCOUNTS, READ_CALENDAR, WRITE_CALENDAR, permissionCount)" \
-          "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+          "WRITE_CONTACTS, GET_ACCOUNTS, READ_CALENDAR, WRITE_CALENDAR, permissionCount, buildTime, recordTime)" \
+          "VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
 
+    record_time = time.strftime("%Y-%m-%d", time.localtime())
 
     values = (ana.getFileName(), ana.getMD5(), ana.getSize(), ' '.join(s for s in ana.getPackerProtection()), ana.getUseNative(),
               ana.getClassCount(), ana.getMethodCount(), ana.getUseMultidex(), ana.getMinSDK(), ana.getTgtSDK(), ana.getMaxSDK(),
@@ -569,7 +604,7 @@ def basic_info_to_DB(conn, ana): # 参数：sqlite3.connect, APKAnalyze
               ana.CAMERA, ana.READ_CONTACTS, ana.READ_LOGS, ana.ACCESS_FINE_LOCATION, ana.READ_FRAME_BUFFER, ana.BRICK, ana.INSTALL_PACKAGES, ana.MOUNT_FORMAT_FILESYSTEMS,
               ana.RECEIVE_BOOT_COMPLETED, ana.WRITE_EXTERNAL_STORAGE, ana.CALL_PHONE, ana.READ_CALL_LOG, ana.WRITE_CALL_LOG, ana.ADD_VOICEMAIL, ana.USE_SIP,
               ana.PROCESS_OUTGOING_CALLS, ana.SEND_SMS, ana.RECEIVE_SMS, ana.READ_SMS, ana.RECEIVE_WAP_PUSH, ana.RECEIVE_MMS, ana.ACCESS_COARSE_LOCATION, ana.RECORD_AUDIO,
-              ana.WRITE_CONTACTS, ana.GET_ACCOUNTS, ana.READ_CALENDAR, ana.WRITE_CALENDAR, ana.permissionCount)
+              ana.WRITE_CONTACTS, ana.GET_ACCOUNTS, ana.READ_CALENDAR, ana.WRITE_CALENDAR, ana.permissionCount, ana.getBuildTime(), record_time)
 
     # t0 = time.clock()
     DBManager.sqlInserter(conn, sql, values) # 应用基本信息写入数据库
