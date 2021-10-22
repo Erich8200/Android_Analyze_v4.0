@@ -4,10 +4,16 @@ import re
 import DBManager
 import time
 from zipfile import *
+import subprocess
 
 from androguard.core.bytecodes import apk, dvm # 导入androguard的模块需要将工程解释器配置成系统解释器
 from androguard.core.analysis import analysis # 才能用pip安装的库
 from androguard.misc import AnalyzeAPK
+
+
+# AAPT absolute path
+aapt_path = r'C:\Users\JYQ\AppData\Local\Android\Sdk\build-tools\30.0.2\aapt.exe' # 要用绝对路径 + shell=True
+
 
 class APKAnalysis:
 
@@ -484,7 +490,15 @@ class APKAnalysis:
 
     def getPkgName(self):
         if self.__pkgName == "":
-            self.__pkgName = self.__a.get_package()
+            cmd_line = aapt_path + " dump badging %s" % self.__path
+            p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=True) # 要用绝对路径 + shell=True
+            (output, err) = p.communicate()
+            t = output.decode().split("\n")
+            for item in t:
+                # 此处的apk包名我是取得中文名称。具体信息可以在dos下用aapt查看详细信息后，修改正则获取自己想要的name
+                match = re.compile("package: name='([\u4e00-\u9fa5_a-zA-Z0-9-\S]+)'").search(item)
+                if match is not None:
+                    self.__pkgName = match.group(1)
         return self.__pkgName
 
     def read_node_details(self, node) -> dict:
@@ -530,7 +544,14 @@ class APKAnalysis:
 
     def getMainActivity(self):
         if self.__mainActivity == "":
-            self.__mainActivity = self.__a.get_main_activity()
+            cmd_line = aapt_path + " dump badging %s" % self.__path
+            p = subprocess.Popen(cmd_line, stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE, shell=True)
+            (output, err) = p.communicate()
+            t = output.decode().split("\n")
+            for item in t:
+                match = re.compile("launchable-activity: name='([\u4e00-\u9fa5_a-zA-Z0-9-\S]+)'").search(item)
+                if match is not None:
+                    self.__mainActivity = match.group(1)
         return self.__mainActivity
 
     def getActivityCount(self):

@@ -6,7 +6,7 @@ import os
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
-# sampleAPKDir = "H:\\APK_samples\\APK\\2021.7_zhushou.360.cn_Benign\\security"
+
 sampleAPKDir = "samples"
 dbPath = "database/Android_app_database.db"
 cur = 1
@@ -15,7 +15,80 @@ analyzed_samples = set()
 
 # 打开数据库
 def connect_DB():
-    conn = DBManager.connectDB(dbPath)
+    conn = None
+    if os.path.exists(dbPath):
+        conn = DBManager.connectDB(dbPath)
+        print("<<<<<< Database opened >>>>>>")
+    else:
+        conn = DBManager.connectDB(dbPath)
+        DBManager.sqlQueryer(conn, 
+                            '''
+                                create table APK_basic_info
+                                (
+                                    filename                 text,
+                                    appName                  text,
+                                    md5                      text,
+                                    size                     integer,
+                                    shellProtection          text,
+                                    native                   boolean,
+                                    classCount               integer,
+                                    methodCount              integer,
+                                    permissionCount          integer,
+                                    ActivityCount            integer,
+                                    ReceiverCount            integer,
+                                    ServiceCount             integer,
+                                    ProviderCount            integer,
+                                    multidex                 boolean,
+                                    reflection               boolean,
+                                    minSDK                   integer,
+                                    tgtSDK                   integer,
+                                    maxSDK                   integer,
+                                    signedV1                 boolean,
+                                    signedV2                 boolean,
+                                    signedV3                 boolean,
+                                    packageName              text,
+                                    mainActivity             text,
+                                    READ_PHONE_STATE         boolean,
+                                    READ_EXTERNAL_STORAGE    boolean,
+                                    SYSTEM_ALERT_WINDOW      boolean,
+                                    GET_TASKS                boolean,
+                                    WRITE_SETTINGS           boolean,
+                                    BIND_DEVICE_ADMIN        boolean,
+                                    INTERNET                 boolean,
+                                    BLUETOOTH                boolean,
+                                    CAMERA                   boolean,
+                                    READ_CONTACTS            boolean,
+                                    READ_LOGS                boolean,
+                                    ACCESS_FINE_LOCATION     boolean,
+                                    READ_FRAME_BUFFER        boolean,
+                                    BRICK                    boolean,
+                                    INSTALL_PACKAGES         boolean,
+                                    MOUNT_FORMAT_FILESYSTEMS boolean,
+                                    RECEIVE_BOOT_COMPLETED   boolean,
+                                    WRITE_EXTERNAL_STORAGE   boolean,
+                                    CALL_PHONE               boolean,
+                                    READ_CALL_LOG            boolean,
+                                    WRITE_CALL_LOG           boolean,
+                                    ADD_VOICEMAIL            boolean,
+                                    USE_SIP                  boolean,
+                                    PROCESS_OUTGOING_CALLS   boolean,
+                                    SEND_SMS                 boolean,
+                                    RECEIVE_SMS              boolean,
+                                    READ_SMS                 boolean,
+                                    RECEIVE_WAP_PUSH         boolean,
+                                    RECEIVE_MMS              boolean,
+                                    ACCESS_COARSE_LOCATION   boolean,
+                                    RECORD_AUDIO             boolean,
+                                    WRITE_CONTACTS           boolean,
+                                    GET_ACCOUNTS             boolean,
+                                    READ_CALENDAR            boolean,
+                                    WRITE_CALENDAR           boolean,
+                                    buildTime                date,
+                                    recordTime               date,
+                                    malware                  boolean
+                                );
+                            ''')
+        print("<<<<<< Database created >>>>>>")
     return conn
 
 # 关闭数据库
