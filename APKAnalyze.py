@@ -130,17 +130,16 @@ class APKAnalysis:
 
     def __check360Java2CPacker(self):
         if self.__a is not None:
-            fileList = self.__a.get_files()
-            for file in fileList:
-                file = os.path.basename(file)
-                if "libjgdtc.so" == file or "libjgdtc_a64.so" == file or "libjgdtc_x86.so" == file or "libjgdtc_x64.so" == file:
-                    for d in self.__d:
-                        for c in d.get_classes():
-                            if "QDTCProtect;" in str(c):
-                                self.__packer.append("Qihoo360[Dex2C_Customized]")
-                                return
-                    self.__packer.append("Qihoo360[Dex2C]")
-                    return
+            # fileList = self.__a.get_files()
+            # for file in fileList:
+            #     file = os.path.basename(file)
+            #     if "libjgdtc.so" == file or "libjgdtc_a64.so" == file or "libjgdtc_x86.so" == file or "libjgdtc_x64.so" == file:
+            #
+            for d in self.__d:
+                for c in d.get_classes():
+                    if "QDTCProtect" in str(c) or "com/qihoo/util/DtcLoader" in str(c) or "qdtc" in str(c).lower():
+                        self.__packer.append("Qihoo360[Dex2C]")
+                        return
     
     def __checkIjiamiPacker(self):
         if self.__a is not None:
@@ -233,10 +232,13 @@ class APKAnalysis:
         if self.__a is not None:
             fileList = self.__a.get_files()
             for file in fileList:
-                file = os.path.basename(file)
-                if "libkwscmm.so" == file or "libkwscr.so" == file or "libkwslinker.so" == file or "kdpdata.so" == file or "dex.dat" == file or "libkdp.so" == file \
-                or "libbug.so" == file:
-                    self.__packer.append("Kiwi")
+                so_name = os.path.basename(file)
+                if "libkwscmm.so" == so_name or "libkwscr.so" == so_name or "libkwslinker.so" == so_name or "kdpdata.so" == so_name or "dex.dat" == so_name or "libkdp.so" == so_name \
+                or "libbug.so" == so_name or "libnllvm.so" == so_name or "libxloader.so" == so_name:
+                    if "libnllvm.so" == so_name or "libxloader.so" == so_name:
+                        self.__packer.append("Kiwi[Java2C]")
+                    else:
+                        self.__packer.append("Kiwi")
                     return
 
     def __checkPayEgis(self): # 通付盾

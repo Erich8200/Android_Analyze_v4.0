@@ -22,7 +22,8 @@ if __name__ == '__main__':
                 nameList=zipfiles.namelist()
                 zipfiles.close()
                 for fileName in nameList:
-                    pattern = re.compile("lib/x86/\w+.so")
+                    pattern = re.compile("lib/x86/[\x20-\x7f]+\.so")
+                    # pattern = re.compile("lib/arm64-v8a/[\x20-\x7f]+\.so")
                     if pattern.match(fileName) is not None:
                         print(fileName)
                         os.rename(file_path, file_path.split('.apk')[0] + '_x86.apk')
