@@ -23,12 +23,11 @@ class PackerCheckerFast:
                 self.__packer.append("Qihoo360")
                 return
 
-    def __check360PackerJava2C(self):
+    def __check360Java2CPacker(self):
         for file in self.__fileList:
             file = os.path.basename(file)
-            if "libjgdtc.so" == file or "libjgdtc" == file or "libjgdtc_a64.so" == file or "libjgdtc_x86.so" == file or "libjgdtc_x64.so" == file \
-                    or "libjgdtc_mips" == file:
-                self.__packer.append("Qihoo360[Dex2C]")
+            if "libjgdtc.so" == file or "libjgdtc_a64.so" == file or "libjgdtc_x86.so" == file or "libjgdtc_x64.so" == file:
+                self.__packer.append("Qihoo360[Java2C]")
                 return
 
     def __checkIjiamiPacker(self):
@@ -105,12 +104,18 @@ class PackerCheckerFast:
     def __checkKiwiPacker(self):
         for file in self.__fileList:
             so_name = os.path.basename(file)
-            if "libkwscmm.so" == so_name or "libkwscr.so" == so_name or "libkwslinker.so" == so_name or "kdpdata.so" == so_name or "dex.dat" == so_name or "libkdp.so" == so_name \
-                    or "libbug.so" == so_name or "libnllvm.so" == so_name or "libxloader.so" == so_name:
-                if "libnllvm.so" == so_name or "libxloader.so" == so_name:
+            if "libkwscmm.so" == so_name or "libkwscr.so" == so_name or "libkwslinker.so" == so_name or "kdpdata.so" == so_name:
+                self.__packer.append("Kiwi[old]")
+                return
+            if "libnllvm.so" == so_name or "libxloader.so" == so_name or "libnMg.so" == so_name:
+                if "libnllvm.so" == so_name:
                     self.__packer.append("Kiwi[Java2C]")
                 else:
                     self.__packer.append("Kiwi")
+                return
+            mat_res = re.match(r'libnllvm\d+\.so', so_name)
+            if mat_res:
+                self.__packer.append("Kiwi[Java2C]")
                 return
 
     def __checkPayEgis(self):  # 通付盾
@@ -162,7 +167,7 @@ class PackerCheckerFast:
     def checkPackerProtection(self):
         if self.__fileList is not []:
             self.__check360Packer()
-            self.__check360PackerJava2C()
+            self.__check360Java2CPacker()
             self.__checkIjiamiPacker()
             self.__checkBangclePacker()
             self.__checkAliPacker()
@@ -176,7 +181,11 @@ class PackerCheckerFast:
             self.__checkAPKProtectPacker()
             self.__checkDingxiangPacker()
             self.__checkEdunPacker()
-            if not self.__packer:  # No matching packer
-                self.__packer = ["no known protection detected"]
+            return self.__packer
 
+    def checkJava2CProtection(self):
+        if self.__fileList is not []:
+            self.__check360Java2CPacker()
+            self.__checkKiwiPacker()
+            self.__checkEdunPacker()
             return self.__packer
